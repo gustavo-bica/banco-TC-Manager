@@ -1,6 +1,7 @@
 require("dotenv").config();
 console.log("DB_USER:", process.env.DB_USER);
 const app = require("../app");
+const conn = require("../database/connection");
 
 const PORT = process.env.PORT || 3000;
 
@@ -13,13 +14,18 @@ app.get('/api/testar-banco', async (req, res) => {
     try {
         console.log('Testando conexão com o banco...');
         
-        // Testar conexão
-        const connection = await pool.getConnection();
-        console.log('Conexão estabelecida com sucesso!');
+        // Função helper para promisificar queries
+        const query = (sql) => {
+            return new Promise((resolve, reject) => {
+                conn.query(sql, (err, results) => {
+                    if (err) reject(err);
+                    else resolve(results);
+                });
+            });
+        };
         
         // Buscar apenas os nomes dos usuários (campo 'nome' conforme a estrutura da tabela)
-        const [rows] = await connection.execute('SELECT nome FROM USUARIOS');
-        connection.release();
+        const rows = await query('SELECT nome FROM USUARIOS');
         
         console.log(`Encontrados ${rows.length} usuários na tabela`);
         
